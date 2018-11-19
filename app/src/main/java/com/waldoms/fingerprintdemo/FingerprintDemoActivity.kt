@@ -11,6 +11,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
 import android.security.keystore.KeyProperties
+import android.security.keystore.KeyGenParameterSpec
+import java.io.IOException
+import java.security.cert.CertificateException
+import java.security.InvalidAlgorithmParameterException
 import java.security.KeyStore
 import java.security.NoSuchAlgorithmException
 import java.security.NoSuchProviderException
@@ -22,6 +26,8 @@ class FingerprintDemoActivity : AppCompatActivity()
     private var fingerprintManager:FingerprintManager? = null
     private var keyStore:KeyStore? = null
     private var keyGenerator:KeyGenerator? = null
+
+    private val KEY_NAME = "example_key"
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -77,5 +83,20 @@ class FingerprintDemoActivity : AppCompatActivity()
         }
         catch(e:NoSuchAlgorithmException) { throw RuntimeException("Failed to get KeyGenerator instance", e) }
         catch(e:NoSuchProviderException) { throw RuntimeException("Failed to get KeyGenerator instance", e) }
+
+        try
+        {
+            keyStore?.load(null)
+            keyGenerator?.init(KeyGenParameterSpec.Builder(KEY_NAME, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                .setUserAuthenticationRequired(true)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                .build())
+            keyGenerator?.generateKey()
+        }
+        catch(e:NoSuchAlgorithmException) { throw RuntimeException(e) }
+        catch(e:InvalidAlgorithmParameterException) { throw RuntimeException(e) }
+        catch(e:CertificateException) { throw RuntimeException(e) }
+        catch(e:IOException) { throw RuntimeException(e) }
     }
 }
